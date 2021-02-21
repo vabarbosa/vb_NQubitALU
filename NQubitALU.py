@@ -283,6 +283,35 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
                 self.reset([qr_ancilla[2]]*1)
                 print('Ancilla 3 reset')
 
+def set_register_from_classical_register(quantumRegister: qiskit.QuantumRegister, classicalRegister: qiskit.ClassicalRegister):
+    '''
+    Sets the qubits in a quantum register to the classical values of a classic register.
+    Cannot be implemented as of current Qiskit version without measuring a circuit.
+
+    Input:
+        quantumRegister: A quantum register in its ground state.
+        classicalRegister: Target register to set. 
+    '''
+    if quantumRegister.size != classicalRegister.size:
+        raise ValueError("Classic register and quantum register are not of same size")
+    pass
+
+def set_quantum_register_from_string(circuit: qiskit.QuantumCircuit,
+                                    quantumRegister: qiskit.QuantumRegister,
+                                    input_string: str,
+                                    n_resets: int = 1):
+    """
+    Resets  quantumRegister and sets it to the values of the input string. Appends the necessary gates into circuit.
+    """
+    N = len(input_string)
+    if quantumRegister.size != N:
+        raise ValueError("Classic register and quantum register are not of same size")
+    circuit.reset([qubit for qubit in quantumRegister]*n_resets)
+    for characters in range(N-1, -1, -1):
+        print(N-characters)
+        if input_string[characters] == '1':
+            circuit.x(quantumRegister[N - characters - 1])
+
 if __name__ == "__main__":
     # Import Aer
     from qiskit import Aer
@@ -292,7 +321,11 @@ if __name__ == "__main__":
     # Run the quantum circuit on a statevector simulator backend
     backend = Aer.get_backend('statevector_simulator')
 
-    N = 3
+    N = 2
+    stringA = '01'
+    stringB = '10'
+    stringSB = '0'
+
     # Initialize quantum and classic registers
     registerA = qiskit.QuantumRegister(N)
     registerB = qiskit.QuantumRegister(N)
@@ -300,17 +333,19 @@ if __name__ == "__main__":
     registerSB = qiskit.QuantumRegister(1)
     registerC = qiskit.QuantumRegister(N)
     registerAnc = qiskit.QuantumRegister(3)
-    classicRegister = qiskit.ClassicalRegister(4+4*N)
+    measurementRegister = qiskit.ClassicalRegister(4+4*N)
     regs = [registerA, registerB, registerS, registerSB, registerC, registerAnc]
     flat_regs = list(itertools.chain(*[register[:] for register in regs]))
 
     # Create a circuit
-    circuit = qiskit.QuantumCircuit(*regs, classicRegister,  name = 'ALU')
+    circuit = qiskit.QuantumCircuit(*regs, measurementRegister,  name = 'ALU')
     
-    # Initialize state A = 01, B = 01, SB = 1
-    circuit.x(registerA[0])
-    circuit.x(registerB[0])
-    # circuit.x(registerSB[0])
+    # Set input registers
+    set_quantum_register_from_string(circuit, registerA, stringA)
+    set_quantum_register_from_string(circuit, registerB, stringB)
+
+    # Set SB to choose between add or sub
+    set_quantum_register_from_string(circuit, registerSB, stringSB)
 
     # Add NQubitALU to the circuit
     circuit.append(NQubitALU(*regs), flat_regs)
@@ -332,6 +367,6 @@ if __name__ == "__main__":
 
     # Return counts
     counts = result.get_counts(circuit)
-    print("\nInputs are A = 001, B = 001, SB = 1")
+    print(f"\nInputs are A = {stringA}, B = {stringB}, SB = {stringSB}")
     print("\nTotal count for 00 and 11 are:", counts)
     print("\nSum of A + (SB XOR B) is:", counts.most_frequent()[(4+N):(4+2*N)])
