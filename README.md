@@ -3,7 +3,7 @@
 This is a simple implementation of a simple ALU that allows us to perform addition and substraction for two N-qubit objects.
 Implementation in [Qiskit](https://qiskit.org/) was done for scratch for didactic purposes, might not be optimal.
 
-ALU(N) circuit requires a (4N+4) qubit register, where N is the length of the desired qubit.
+ALU(N) circuit requires a (4N+4) qubit register, where N is the length of the desired qubit strings to operate with.
 
 The registers have to be set in order so that, if you want to add A and B with sub bit SB, and set the result into register S, then the register list has to be of the following order:
 
