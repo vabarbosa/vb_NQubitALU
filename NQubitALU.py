@@ -252,10 +252,7 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
         qr_SB = self.registerSB
         qr_carry = self.registerC
         qr_ancilla = self.registerAncilla
-        
 
-        print("Size of qubits: ", qr_A.size, qr_B.size, qr_S.size, qr_SB.size, qr_carry.size, qr_ancilla.size)
-        # Initialize B register with SB
 
         for B_index in range(qr_B.size):
             self.cx(qr_B[B_index], qr_ancilla[0])
@@ -267,21 +264,15 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
             if A_index == 0:
                 self.append(FullAdder(), [qubit for qubit in [qr_A[A_index], qr_B[A_index], qr_SB, qr_carry[A_index],
                                                         qr_S[A_index], qr_ancilla[0], qr_ancilla[1], qr_ancilla[2]]]) #a0, b0, sb, c0, s0, ancillas
-                print('First adder')
                 self.reset([qr_ancilla[0]]*1)
                 self.reset([qr_ancilla[1]]*1)
                 self.reset([qr_ancilla[2]]*1)
             else:
-                print(qr_A[A_index], qr_B[A_index], qr_carry[A_index - 1], qr_carry[A_index],
-                                                        qr_S[A_index], qr_ancilla[0], qr_ancilla[1], qr_ancilla[2])
                 self.append(FullAdder(), [qubit for qubit in [qr_A[A_index], qr_B[A_index], qr_carry[A_index - 1], qr_carry[A_index],
                                                         qr_S[A_index], qr_ancilla[0], qr_ancilla[1], qr_ancilla[2]]]) #a0, b0, sb, c0, s0, ancillas
                 self.reset([qr_ancilla[0]]*1)
-                print('Ancilla 1 reset')
                 self.reset([qr_ancilla[1]]*1)
-                print('Ancilla 2 reset')
                 self.reset([qr_ancilla[2]]*1)
-                print('Ancilla 3 reset')
 
 def set_register_from_classical_register(quantumRegister: qiskit.QuantumRegister, classicalRegister: qiskit.ClassicalRegister):
     '''
@@ -308,7 +299,6 @@ def set_quantum_register_from_string(circuit: qiskit.QuantumCircuit,
         raise ValueError("Classic register and quantum register are not of same size")
     circuit.reset([qubit for qubit in quantumRegister]*n_resets)
     for characters in range(N-1, -1, -1):
-        print(N-characters)
         if input_string[characters] == '1':
             circuit.x(quantumRegister[N - characters - 1])
 
@@ -354,7 +344,7 @@ if __name__ == "__main__":
     circuit.measure(range(4+4*N), range(4+4*N))
 
     # Display the circuit
-    print(circuit)
+    # print(circuit)
 
     # Use Aer's qasm_simulator
     simulator = Aer.get_backend('qasm_simulator')
@@ -368,5 +358,5 @@ if __name__ == "__main__":
     # Return counts
     counts = result.get_counts(circuit)
     print(f"\nInputs are A = {stringA}, B = {stringB}, SB = {stringSB}")
-    print("\nTotal count for 00 and 11 are:", counts)
+    # print("\nTotal count for 00 and 11 are:", counts)
     print("\nSum of A + (SB XOR B) is:", counts.most_frequent()[(4+N):(4+2*N)])
