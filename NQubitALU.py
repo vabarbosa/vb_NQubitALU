@@ -226,15 +226,15 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
             valid = False
             if raise_on_failure:
                 raise AttributeError('The input register has not been set.')
-        if not (registerA.size and registerB.size and registerS.size and registerC.size):
+        if not (self.registerA.size and self.registerB.size and self.registerS.size and self.registerC.size):
             valid = False
             if raise_on_failure:
                 raise ValueError('Register sizes are not equal.')
-        if registerSB.size != 1:
+        if self.registerSB.size != 1:
             valid = False
             if raise_on_failure:
                 raise ValueError('Control qubit register must be of size 1.')
-        if registerAncilla.size < 3:
+        if self.registerAncilla.size < 3:
             valid = False
             if raise_on_failure:
                 raise ValueError('Ancilla register needs at least three qubits.')
@@ -326,7 +326,6 @@ if __name__ == "__main__":
     measurementRegister = qiskit.ClassicalRegister(4+4*N)
     regs = [registerA, registerB, registerS, registerSB, registerC, registerAnc]
     flat_regs = list(itertools.chain(*[register[:] for register in regs]))
-
     # Create a circuit
     circuit = qiskit.QuantumCircuit(*regs, measurementRegister,  name = 'ALU')
     
@@ -344,19 +343,19 @@ if __name__ == "__main__":
     circuit.measure(range(4+4*N), range(4+4*N))
 
     # Display the circuit
-    # print(circuit)
+    print(circuit)
 
-    # Use Aer's qasm_simulator
-    simulator = Aer.get_backend('qasm_simulator')
+    # # Use Aer's qasm_simulator
+    # simulator = Aer.get_backend('qasm_simulator')
 
-    # Execute the circuit on the qasm simulator
-    job = qiskit.execute(circuit, backend, shots=1000)
+    # # Execute the circuit on the qasm simulator
+    # job = qiskit.execute(circuit, backend, shots=1000)
 
-    # Grab results from the job
-    result = job.result()
+    # # Grab results from the job
+    # result = job.result()
 
-    # Return counts
-    counts = result.get_counts(circuit)
-    print(f"\nInputs are A = {stringA}, B = {stringB}, SB = {stringSB}")
-    # print("\nTotal count for 00 and 11 are:", counts)
-    print("\nSum of A + (SB XOR B) is:", counts.most_frequent()[(4+N):(4+2*N)])
+    # # Return counts
+    # counts = result.get_counts(circuit)
+    # print(f"\nInputs are A = {stringA}, B = {stringB}, SB = {stringSB}")
+    # # print("\nTotal count for 00 and 11 are:", counts)
+    # print("\nSum of A + (SB XOR B) is:", counts.most_frequent()[(4+N):(4+2*N)])
