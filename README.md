@@ -15,6 +15,8 @@ All registers are of length N, except for register SB which is length 1 and regi
 
 After installing qiskit, just run NQubitALU.py from a terminal to see an example.
 
+In the example, I define two 2-bit strings, and simultaneously SUM and SUB the desired strings by setting the SB bit into a Hadamard superposition.
+
 ## Other implementations
 
 After writing the code I started researching into other implementations.
