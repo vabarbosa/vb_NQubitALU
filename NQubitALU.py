@@ -85,20 +85,9 @@ class TwoQubitALU(qiskit.QuantumCircuit):
 
         Args:
             num_qubits: the width of circuit.
-            amount: the xor amount in decimal form.
-            seed: random seed in case a random xor is requested.
 
         Raises:
-            CircuitError: if the xor bitstring exceeds available qubits.
-
-        Reference Circuit:
-            .. jupyter-execute::
-                :hide-code:
-
-                from qiskit.circuit.library import XOR
-                import qiskit.tools.jupyter
-                circuit = XOR(5, seed=42)
-                %circuit_library_info circuit
+            ValueError: If the number of qubits is not right.
         """
         super().__init__(num_qubits, name="ALU(2)")
 
@@ -142,13 +131,15 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
                 registerAncilla: qiskit.QuantumRegister,
                 num_qubits: Optional[int] = None,
                 name: str = 'ALU(N)') -> None:
-        """Return a circuit implementing a N Qubit ALU (ALU(N)), with input qubits in the form (a0, a1, b0, b1, s0, s1, c0, c1, sb, ancilla1, ancilla2, ancilla3)
+        """Return a circuit implementing a simple N Qubit ALU (named ALU(N)), with input qubits in the form (a0, ... an, b0, b ...bn, s0...sn, c0...cn, sb, ancilla1, ancilla2, ancilla3)
 
         Args:
-            num_qubits: the width of circuit.
-            amount: the xor amount in decimal form.
-            seed: random seed in case a random xor is requested.
-
+            registerA: First Quantum register of size N, which will be the first string to operate on.
+            registerB: Second Quantum register of size N, which will be the second string to operate on.
+            registerS: Third Quantum register of size N, which will contain the output string.
+            registerSB: Single qubit quantum register which controls between operations ADD and SUB.
+            registerC: Fourth Quantum register of size N, which contains the carry bits.
+            registerAncilla: Quantum register of size 3 to operate Ancillas.
         Raises:
             CircuitError: if the xor bitstring exceeds available qubits.
 
@@ -206,12 +197,6 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
         qr_C = self.registerC
         qr_An = self.registerAncilla
         self.qregs = [qr_A, qr_B, qr_S, qr_SB, qr_C, qr_An]
-        # if self.num_carry_qubits > 0:
-        #     self.qr_carry = qiskit.QuantumRegister(self.num_carry_qubits, name='carry')
-        #     self.qregs += [self.qr_carry]
-        # if self.num_ancilla_qubits > 0:
-        #     self.qr_ancilla = qiskit.QuantumRegister(self.num_ancilla_qubits, name='ancilla')
-        #     self.qregs += [self.qr_ancilla]
 
 
     @property
@@ -241,6 +226,18 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
             valid = False
             if raise_on_failure:
                 raise AttributeError('The input register has not been set.')
+        if not (registerA.size and registerB.size and registerS.size and registerC.size):
+            valid = False
+            if raise_on_failure:
+                raise ValueError('Register sizes are not equal.')
+        if registerSB.size != 1:
+            valid = False
+            if raise_on_failure:
+                raise ValueError('Control qubit register must be of size 1.')
+        if registerAncilla.size < 3:
+            valid = False
+            if raise_on_failure:
+                raise ValueError('Ancilla register needs at least three qubits.')
         return valid
 
     def _build(self):
@@ -253,6 +250,8 @@ class NQubitALU(qiskit.circuit.library.BlueprintCircuit):
         qr_carry = self.registerC
         qr_ancilla = self.registerAncilla
 
+        for qubit in qr_ancilla:
+            self.reset([qubit]*1)
 
         for B_index in range(qr_B.size):
             self.cx(qr_B[B_index], qr_ancilla[0])
@@ -292,7 +291,7 @@ def set_quantum_register_from_string(circuit: qiskit.QuantumCircuit,
                                     input_string: str,
                                     n_resets: int = 1):
     """
-    Resets  quantumRegister and sets it to the values of the input string. Appends the necessary gates into circuit.
+    Resets quantumRegister and sets it to the values of the input string. Appends the necessary gates into circuit.
     """
     N = len(input_string)
     if quantumRegister.size != N:
@@ -303,14 +302,15 @@ def set_quantum_register_from_string(circuit: qiskit.QuantumCircuit,
             circuit.x(quantumRegister[N - characters - 1])
 
 if __name__ == "__main__":
-    # Import Aer
     from qiskit import Aer
     import qiskit
 
     import itertools
+
     # Run the quantum circuit on a statevector simulator backend
     backend = Aer.get_backend('statevector_simulator')
 
+    # Define length of strings, as well as the strings you would like to sum and the control bit
     N = 2
     stringA = '01'
     stringB = '10'
