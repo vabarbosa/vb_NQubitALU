@@ -306,14 +306,12 @@ if __name__ == "__main__":
     import qiskit
 
     import itertools
-
-    # Run the quantum circuit on a statevector simulator backend
-    backend = Aer.get_backend('statevector_simulator')
+    from qiskit.result.utils import count_keys
 
     # Define length of strings, as well as the strings you would like to sum and the control bit
     N = 2
-    stringA = '01'
-    stringB = '10'
+    stringA = '10'
+    stringB = '01'
     stringSB = '0'
 
     # Initialize quantum and classic registers
@@ -326,6 +324,7 @@ if __name__ == "__main__":
     measurementRegister = qiskit.ClassicalRegister(4+4*N)
     regs = [registerA, registerB, registerS, registerSB, registerC, registerAnc]
     flat_regs = list(itertools.chain(*[register[:] for register in regs]))
+
     # Create a circuit
     circuit = qiskit.QuantumCircuit(*regs, measurementRegister,  name = 'ALU')
     
@@ -334,28 +333,36 @@ if __name__ == "__main__":
     set_quantum_register_from_string(circuit, registerB, stringB)
 
     # Set SB to choose between add or sub
+    # If dding a Hadamard gate, then calculate both ADD and SUB
     set_quantum_register_from_string(circuit, registerSB, stringSB)
+    circuit.h(registerSB)
 
     # Add NQubitALU to the circuit
-    circuit.append(NQubitALU(*regs), flat_regs)
-
+    circuit.append(NQubitALU(*regs).to_instruction(), flat_regs)
+    
     # Add measurement operations to the circuit
+    circuit.barrier()
     circuit.measure(range(4+4*N), range(4+4*N))
 
     # Display the circuit
     print(circuit)
 
-    # # Use Aer's qasm_simulator
-    # simulator = Aer.get_backend('qasm_simulator')
+    # Use Aer's qasm_simulator
+    simulator = Aer.get_backend('qasm_simulator')
+    n_shots = 1024
 
-    # # Execute the circuit on the qasm simulator
-    # job = qiskit.execute(circuit, backend, shots=1000)
+    # Execute the circuit on the qasm simulator
+    job = qiskit.execute(circuit, simulator, shots=n_shots, meas_return = 'single')
 
-    # # Grab results from the job
-    # result = job.result()
+    # Grab results from the job
+    result = job.result()
 
-    # # Return counts
-    # counts = result.get_counts(circuit)
-    # print(f"\nInputs are A = {stringA}, B = {stringB}, SB = {stringSB}")
-    # # print("\nTotal count for 00 and 11 are:", counts)
-    # print("\nSum of A + (SB XOR B) is:", counts.most_frequent()[(4+N):(4+2*N)])
+    # Return counts
+    counts = result.get_counts(circuit)
+
+    bit_results = list(counts.keys())
+    print(f"\nInputs are A = {stringA}, B = {stringB}, SB = {stringSB}")
+    print("\nTotal counts are:", counts)
+    print("\nSum of A + (SB XOR B) is: \n")
+    for result in bit_results:
+        print(f"{result[4+N:4+2*N]} with a number of counts {counts.get(result)}/{n_shots}")
