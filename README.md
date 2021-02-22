@@ -11,8 +11,12 @@ The registers have to be set in order so that, if you want to add A and B with s
 
 All registers are of length N, except for register SB which is length 1 and register Ancilla which is length 3.
 
+## Example
+
+After installing qiskit, just run NQubitALU.py from a terminal to see an example.
+
+## Other implementations
 
 After writing the code I started researching into other implementations.
 Check the following:
-
 https://arxiv.org/abs/1107.3924
